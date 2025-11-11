@@ -5,7 +5,6 @@ import com.codewithmosh.store.dtos.CartDto;
 import com.codewithmosh.store.dtos.CartItemDto;
 import com.codewithmosh.store.dtos.UpdateCartItemRequest;
 import com.codewithmosh.store.entities.Cart;
-import com.codewithmosh.store.entities.CartItem;
 import com.codewithmosh.store.mappers.CartMapper;
 import com.codewithmosh.store.repositories.CartRepository;
 import com.codewithmosh.store.repositories.ProductRepository;
@@ -75,8 +74,29 @@ public class CartController {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(Map.of("error", "Product was not found in the cart"));
     }
-    cartItem.setQuantity(request.getQuanitity());
+    cartItem.setQuantity(request.getQuantity());
     cartRepository.save(cart);
     return ResponseEntity.status(HttpStatus.OK).body(cartMapper.toDto(cart));
+  }
+
+  @DeleteMapping("/{cartId}/items/{productId}")
+  public ResponseEntity<?> deleteItem(@PathVariable UUID cartId, @PathVariable Long productId) {
+    var cart = cartRepository.getCartWithItems(cartId).orElse(null);
+    if (cart == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Cart not found"));
+    }
+    cart.removeItem(productId);
+    cartRepository.save(cart);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
+
+  @DeleteMapping("/{cartId}/items")
+  public ResponseEntity<?> clearCart(@PathVariable UUID cartId) {
+    var cart = cartRepository.getCartWithItems(cartId).orElse(null);
+    if (cart == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Cart not found"));
+    }
+    cart.clearCart();
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }
